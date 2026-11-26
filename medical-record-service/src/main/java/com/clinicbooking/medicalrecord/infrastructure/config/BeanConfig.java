@@ -1,0 +1,3 @@
+package com.clinicbooking.medicalrecord.infrastructure.config;
+import com.clinicbooking.medicalrecord.application.port.in.MedicalRecordUseCase; import com.clinicbooking.medicalrecord.application.port.out.MedicalRecordRepositoryPort; import com.clinicbooking.medicalrecord.application.service.MedicalRecordService; import org.springframework.context.annotation.*; import java.time.Clock;
+@Configuration public class BeanConfig { @Bean Clock medicalClock(){return Clock.systemDefaultZone();} @Bean MedicalRecordUseCase medicalRecordUseCase(MedicalRecordRepositoryPort repository,Clock medicalClock){return new MedicalRecordService(repository,medicalClock);} }

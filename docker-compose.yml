@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: clinicbooking
+      POSTGRES_USER: clinic
+      POSTGRES_PASSWORD: clinic
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic -d clinicbooking"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  patient-service:
+    build:
+      context: .
+      dockerfile: patient-service/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/clinicbooking?currentSchema=schema_pacientes"
+      SPRING_DATASOURCE_USERNAME: clinic
+      SPRING_DATASOURCE_PASSWORD: clinic
+      PORT: "8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  appointment-service:
+    build:
+      context: .
+      dockerfile: appointment-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/clinicbooking?currentSchema=schema_citas"
+      SPRING_DATASOURCE_USERNAME: clinic
+      SPRING_DATASOURCE_PASSWORD: clinic
+      PORT: "8082"
+      PATIENT_SERVICE_HOSTPORT: patient-service:8081
+      NOTIFICATION_SERVICE_HOSTPORT: notification-service:8083
+    depends_on:
+      - patient-service
+      - notification-service
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/clinicbooking?currentSchema=schema_notificaciones"
+      SPRING_DATASOURCE_USERNAME: clinic
+      SPRING_DATASOURCE_PASSWORD: clinic
+      PORT: "8083"
+      TEXTBEE_BASE_URL: https://api.textbee.dev/api/v1
+      TEXTBEE_API_KEY: ""
+      TEXTBEE_DEVICE_ID: ""
+      NOTIFICATION_INTERNAL_KEY: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+  medical-record-service:
+    build:
+      context: .
+      dockerfile: medical-record-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/clinicbooking?currentSchema=schema_historias"
+      SPRING_DATASOURCE_USERNAME: clinic
+      SPRING_DATASOURCE_PASSWORD: clinic
+      PORT: "8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  pgdata:

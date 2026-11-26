@@ -1,0 +1,83 @@
+# Render Blueprint: cuatro servicios Docker; PostgreSQL compartido alojado en Neon.
+services:
+  - type: web
+    name: patient-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./patient-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://ep-frosty-paper-bb4zuk5w.c-15.us-east-1.aws.neon.tech:5432/neondb?sslmode=require&currentSchema=schema_pacientes
+      - key: SPRING_DATASOURCE_USERNAME
+        value: neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+
+  - type: web
+    name: appointment-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./appointment-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://ep-frosty-paper-bb4zuk5w.c-15.us-east-1.aws.neon.tech:5432/neondb?sslmode=require&currentSchema=schema_citas
+      - key: SPRING_DATASOURCE_USERNAME
+        value: neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: PATIENT_SERVICE_HOSTPORT
+        fromService:
+          type: web
+          name: patient-service
+          property: hostport
+      - key: NOTIFICATION_SERVICE_HOSTPORT
+        fromService:
+          type: web
+          name: notification-service
+          property: hostport
+
+  - type: web
+    name: notification-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./notification-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://ep-frosty-paper-bb4zuk5w.c-15.us-east-1.aws.neon.tech:5432/neondb?sslmode=require&currentSchema=schema_notificaciones
+      - key: SPRING_DATASOURCE_USERNAME
+        value: neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_EMAIL
+        sync: false
+      - key: TEXTBEE_API_KEY
+        sync: false
+      - key: TEXTBEE_DEVICE_ID
+        sync: false
+      - key: TEXTBEE_BASE_URL
+        value: https://api.textbee.dev/api/v1
+      - key: NOTIFICATION_INTERNAL_KEY
+        sync: false
+
+  - type: web
+    name: medical-record-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./medical-record-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://ep-frosty-paper-bb4zuk5w.c-15.us-east-1.aws.neon.tech:5432/neondb?sslmode=require&currentSchema=schema_historias
+      - key: SPRING_DATASOURCE_USERNAME
+        value: neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false

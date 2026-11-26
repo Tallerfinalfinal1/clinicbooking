@@ -1,0 +1,3 @@
+package com.clinicbooking.medicalrecord.infrastructure.in.rest;
+import org.springframework.http.*; import org.springframework.web.bind.annotation.*; import java.util.*;
+@RestControllerAdvice public class MedicalRecordExceptionHandler { @ExceptionHandler(NoSuchElementException.class) ResponseEntity<Map<String,String>> missing(Exception e){return ResponseEntity.status(404).body(Map.of("error",e.getMessage()));} @ExceptionHandler({IllegalArgumentException.class,IllegalStateException.class}) ResponseEntity<Map<String,String>> invalid(Exception e){return ResponseEntity.badRequest().body(Map.of("error",e.getMessage()));} }

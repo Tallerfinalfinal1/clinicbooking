@@ -1,0 +1,11 @@
+package com.clinicbooking.medicalrecord.application.service;
+import com.clinicbooking.medicalrecord.application.port.out.MedicalRecordRepositoryPort; import com.clinicbooking.medicalrecord.domain.*; import org.junit.jupiter.api.*; import org.junit.jupiter.api.extension.ExtendWith; import org.mockito.*; import org.mockito.junit.jupiter.MockitoExtension; import java.time.*; import java.util.*; import static org.junit.jupiter.api.Assertions.*; import static org.mockito.Mockito.*;
+@ExtendWith(MockitoExtension.class) class MedicalRecordServiceTest {
+ @Mock MedicalRecordRepositoryPort repo; MedicalRecordService service; UUID patient=UUID.randomUUID(),doctor=UUID.randomUUID();
+ @BeforeEach void init(){service=new MedicalRecordService(repo,Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"),ZoneOffset.UTC));}
+ @Test void createsTriageAndPersists(){ArgumentCaptor<MedicalRecord> c=ArgumentCaptor.forClass(MedicalRecord.class);when(repo.save(any())).thenAnswer(i->i.getArgument(0));var m=service.triage(patient,doctor,120,80,37,80,98,List.of());verify(repo).save(c.capture());assertEquals(patient,m.getPatientId());assertEquals(LocalDateTime.of(2026,1,1,10,0),m.getCreatedAt());}
+ @Test void prescribeAndCloseNeedExistingEncounter(){var m=record();when(repo.findById(m.getId())).thenReturn(Optional.of(m));when(repo.save(any())).thenAnswer(i->i.getArgument(0));assertEquals(1,service.prescribe(m.getId(),"drug").getPrescriptions().size());assertTrue(service.close(m.getId(),"J06.9","estable",0).isClosed());}
+ @Test void missingEncounterThrows(){when(repo.findById(any())).thenReturn(Optional.empty());assertThrows(NoSuchElementException.class,()->service.close(UUID.randomUUID(),"J06.9","ok",0));}
+ @Test void timelineSortsAndProductivityCounts(){var older=record();var newer=new MedicalRecord(null,patient,doctor,120,80,37,80,98,LocalDateTime.now().plusDays(1));newer.prescribe("Rx");newer.close("J06.9","done",1);when(repo.findByPatient(patient)).thenReturn(List.of(newer,older));assertEquals(older,service.timeline(patient).get(0));when(repo.findByDoctor(doctor)).thenReturn(List.of(newer,older));var report=service.productivity(doctor);assertEquals(1,report.get("closedEncounters"));assertEquals(1,report.get("prescriptionsIssued"));}
+ private MedicalRecord record(){return new MedicalRecord(null,patient,doctor,120,80,37,80,98,LocalDateTime.now());}
+}
