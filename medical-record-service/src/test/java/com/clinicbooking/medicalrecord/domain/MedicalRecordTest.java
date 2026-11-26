@@ -1,5 +1,5 @@
 package com.clinicbooking.medicalrecord.domain;
-import org.junit.jupiter.api.Test; import java.util.UUID; import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test; import java.util.UUID; import static org.junit.jupiter.api.Assertions.*; import java.util.List;
 class MedicalRecordTest {
  @Test void triageAndAlertAreCalculated(){var m=new MedicalRecord(null,UUID.randomUUID(),UUID.randomUUID(),80,50,39.5,140,88,null);assertEquals(TriageLevel.II,m.getTriage());assertTrue(m.isClinicalAlert());}
  @Test void validatesVitals(){assertThrows(IllegalArgumentException.class,()->new MedicalRecord(null,UUID.randomUUID(),UUID.randomUUID(),10,50,37,80,99,null));}
